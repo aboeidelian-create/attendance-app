@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تسجيل الدخول - نظام إدارة المرحلة الإعدادية</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-box">
+    <h1>نظام إدارة المرحلة الإعدادية</h1>
+    <form id="loginForm">
+      <div class="form-row">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="form-row">
+        <label>كلمة المرور</label>
+        <input type="password" id="password" required>
+      </div>
+      <div class="form-row" style="margin-top:18px">
+        <button type="submit" class="btn" style="width:100%" id="loginBtn">تسجيل الدخول</button>
+      </div>
+      <div class="error-text" id="errorText"></div>
+    </form>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/utils.js"></script>
+<script>
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    const { data: profile } = await db.from('profiles').select('role').eq('id', session.user.id).single();
+    if (profile) location.href = profile.role === 'manager' ? 'dashboard-manager.html' : 'dashboard-staff.html';
+  }
+})();
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  const errorText = document.getElementById('errorText');
+  errorText.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'جارٍ الدخول...';
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+  if (error) {
+    errorText.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+    btn.disabled = false;
+    btn.textContent = 'تسجيل الدخول';
+    return;
+  }
+
+  const { data: profile, error: pErr } = await db
+    .from('profiles').select('role, is_active').eq('id', data.user.id).single();
+
+  if (pErr || !profile || !profile.is_active) {
+    errorText.textContent = 'الحساب غير مفعّل أو غير موجود، يرجى مراجعة المدير';
+    await db.auth.signOut();
+    btn.disabled = false;
+    btn.textContent = 'تسجيل الدخول';
+    return;
+  }
+
+  location.href = profile.role === 'manager' ? 'dashboard-manager.html' : 'dashboard-staff.html';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الطلاب</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <h1>الطلاب</h1>
+      <button class="btn" id="addBtn">+ إضافة طالب</button>
+    </div>
+
+    <div class="card" id="formCard" style="display:none">
+      <h3 id="formTitle">إضافة طالب</h3>
+      <form id="studentForm">
+        <input type="hidden" id="studentId">
+        <label>الاسم الثنائي *</label>
+        <input type="text" id="firstName" required>
+        <label>اسم الأب *</label>
+        <input type="text" id="fatherName" required>
+        <label>اسم الأم *</label>
+        <input type="text" id="motherName" required>
+        <label>تاريخ الميلاد *</label>
+        <input type="date" id="birthDate" required>
+        <label>الصف الحالي *</label>
+        <select id="classSelect" required></select>
+        <label>رقم الهاتف</label>
+        <input type="tel" id="phone">
+        <div class="error-text" id="formError"></div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button type="submit" class="btn" id="saveBtn">حفظ</button>
+          <button type="button" class="btn secondary" id="cancelBtn">إلغاء</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <select id="filterClass" style="max-width:200px"></select>
+        <input type="text" id="searchBox" placeholder="بحث بالاسم أو اسم الأب/الأم أو الهاتف..." class="search-bar">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>الاسم</th><th>اسم الأب</th><th>اسم الأم</th><th>العمر</th>
+              <th>الصف</th><th>الهاتف</th><th>حضور</th><th>غياب</th><th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="studentsBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyMsg" style="display:none">لا يوجد طلاب في هذا الصف</div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/guard.js"></script>
+<script src="js/students.js"></script>
+</body>
+</html>

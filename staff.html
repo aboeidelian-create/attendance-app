@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>إدارة الخدام</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <h1>إدارة الخدام</h1>
+      <button class="btn" id="addBtn">+ إضافة خادم</button>
+    </div>
+
+    <div class="card" id="formCard" style="display:none">
+      <h3>إضافة خادم جديد</h3>
+      <p style="font-size:13px;color:var(--muted)">
+        أولًا أنشئ حساب البريد وكلمة المرور من لوحة Supabase:
+        Authentication ← Users ← Add user، ثم انسخ الـ UID الخاص بالمستخدم والصقه هنا.
+      </p>
+      <form id="staffForm">
+        <label>الاسم الكامل *</label>
+        <input type="text" id="fullName" required>
+        <label>البريد الإلكتروني (للعرض فقط) *</label>
+        <input type="email" id="emailDisplay" required>
+        <label>UID (من Supabase Authentication) *</label>
+        <input type="text" id="userId" required placeholder="00000000-0000-0000-0000-000000000000">
+        <label>الصف *</label>
+        <select id="classSelect" required></select>
+        <div class="error-text" id="formError"></div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button type="submit" class="btn">حفظ</button>
+          <button type="button" class="btn secondary" id="cancelBtn">إلغاء</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>الاسم</th><th>الصف</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+          <tbody id="staffBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyMsg" style="display:none">لا يوجد خدام بعد</div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/guard.js"></script>
+<script src="js/staff.js"></script>
+</body>
+</html>

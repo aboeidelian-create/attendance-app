@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تسجيل الحضور</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <h1>تسجيل الحضور</h1>
+      <span></span>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <select id="classSelect" style="max-width:200px"></select>
+        <input type="date" id="dateInput" style="max-width:200px">
+      </div>
+    </div>
+
+    <div class="card" id="listCard" style="display:none">
+      <div id="studentsList"></div>
+      <div class="empty" id="emptyMsg" style="display:none">لا يوجد طلاب في هذا الصف</div>
+      <button class="btn" id="saveBtn" style="margin-top:14px">حفظ الحضور</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/guard.js"></script>
+<script src="js/attendance.js"></script>
+</body>
+</html>

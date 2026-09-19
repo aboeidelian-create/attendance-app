@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة التحكم - المدير</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <h1>نظام إدارة المرحلة الإعدادية</h1>
+      <span></span>
+    </div>
+
+    <div class="grid" id="statsGrid"></div>
+
+    <h3>الصفوف</h3>
+    <div class="grid" id="classesGrid"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/guard.js"></script>
+<script src="js/dashboard-manager.js"></script>
+</body>
+</html>
