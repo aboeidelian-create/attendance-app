@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>نظام إدارة المرحلة الإعدادية</title>
+<style>
+:root{
+  --bg:#f4f6f8; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --primary:#2563eb; --primary-dark:#1d4ed8; --danger:#dc2626;
+  --success:#16a34a; --border:#e5e7eb; --radius:12px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Tajawal","Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);direction:rtl}
+a{color:inherit;text-decoration:none}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:230px;background:#111827;color:#fff;padding:20px 14px;flex-shrink:0}
+.sidebar h2{font-size:16px;margin:0 0 20px;color:#fff}
+.sidebar nav a{display:block;padding:10px 12px;border-radius:8px;margin-bottom:6px;color:#d1d5db;font-size:14px;cursor:pointer}
+.sidebar nav a.active,.sidebar nav a:hover{background:#1f2937;color:#fff}
+.sidebar .logout{margin-top:20px;color:#f87171;cursor:pointer}
+.main{flex:1;padding:20px;max-width:100%;overflow-x:hidden}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.topbar h1{font-size:20px;margin:0}
+.hamburger{display:none;background:none;border:none;font-size:24px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.stat-card .num{font-size:26px;font-weight:700;color:var(--primary)}
+.stat-card .label{color:var(--muted);font-size:13px;margin-top:4px}
+.card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.06);margin-bottom:16px}
+.class-card{display:flex;flex-direction:column;gap:10px}
+.class-card .count{font-size:22px;font-weight:700}
+.btn{display:inline-block;padding:10px 16px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-size:14px;cursor:pointer}
+.btn:hover{background:var(--primary-dark)}
+.btn.secondary{background:#e5e7eb;color:var(--text)}
+.btn.danger{background:var(--danger)}
+.btn.success{background:var(--success)}
+.btn.small{padding:6px 10px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:var(--text)}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;margin-top:12px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th,td{padding:10px;text-align:right;border-bottom:1px solid var(--border);font-size:14px;white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:13px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.toast.error{background:var(--danger)}
+.toast.success{background:var(--success)}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px}
+.badge.present{background:#dcfce7;color:#166534}
+.badge.absent{background:#fee2e2;color:#991b1b}
+.badge.active{background:#dcfce7;color:#166534}
+.badge.inactive{background:#f3f4f6;color:#6b7280}
+.attend-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.attend-choices{display:flex;gap:8px}
+.attend-choices button{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:13px}
+.attend-choices button.sel-present{background:#dcfce7;border-color:#16a34a;color:#166534}
+.attend-choices button.sel-absent{background:#fee2e2;border-color:#dc2626;color:#991b1b}
+.empty{text-align:center;color:var(--muted);padding:30px 0}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.login-box{background:#fff;padding:30px;border-radius:var(--radius);width:100%;max-width:360px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.login-box h1{font-size:18px;text-align:center;margin-bottom:20px}
+.error-text{color:var(--danger);font-size:13px;margin-top:8px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:998}
+.modal{background:#fff;border-radius:var(--radius);padding:20px;max-width:400px;width:90%}
+.modal .actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+@media (max-width:768px){
+  .sidebar{position:fixed;right:-260px;top:0;bottom:0;z-index:50;transition:right .2s}
+  .sidebar.open{right:0}
+  .hamburger{display:block}
+  .main{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<div id="page-login" class="login-wrap">
+  <div class="login-box">
+    <h1>نظام إدارة المرحلة الإعدادية</h1>
+    <form id="loginForm">
+      <label>البريد الإلكتروني</label>
+      <input type="email" id="email" required>
+      <label>كلمة المرور</label>
+      <input type="password" id="password" required>
+      <div style="margin-top:18px">
+        <button type="submit" class="btn" style="width:100%" id="loginBtn">تسجيل الدخول</button>
+      </div>
+      <div class="error-text" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<div id="page-app" style="display:none">
+  <div class="layout">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="main">
+      <div class="topbar">
+        <button class="hamburger" id="hamburger">☰</button>
+        <h1 id="pageTitle">الرئيسية</h1>
+        <div id="topbarActions"></div>
+      </div>
+
+      <div id="page-dashboard" class="page"></div>
+      <div id="page-students" class="page" style="display:none"></div>
+      <div id="page-student-profile" class="page" style="display:none"></div>
+      <div id="page-attendance" class="page" style="display:none"></div>
+      <div id="page-staff" class="page" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============ إعداد Supabase ============ */
+const SUPABASE_URL = "https://rzhveemqaczbeljwayvc.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_RI_AsaSdNXqSw943Me4WhA_6pp6-FBE";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ============ حالة التطبيق ============ */
+let PROFILE = null;
+let CLASSES = [];
+let CURRENT_PAGE = 'dashboard';
+
+/* ============ أدوات مساعدة ============ */
+function showToast(message, type) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = message;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+function calcAge(birthDateStr) {
+  const birth = new Date(birthDateStr); const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+function formatDateAr(dateStr) {
+  return new Date(dateStr).toLocaleDateString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+function todayISO() {
+  const d = new Date(); const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+}
+function confirmDialog(message) {
+  return new Promise((resolve) => {
+    const bg = document.createElement('div'); bg.className = 'modal-bg';
+    bg.innerHTML = `<div class="modal"><p>${message}</p><div class="actions">
+      <button class="btn secondary" id="cd-cancel">إلغاء</button>
+      <button class="btn danger" id="cd-ok">تأكيد</button></div></div>`;
+    document.body.appendChild(bg);
+    bg.querySelector('#cd-cancel').onclick = () => { bg.remove(); resolve(false); };
+    bg.querySelector('#cd-ok').onclick = () => { bg.remove(); resolve(true); };
+  });
+}
+
+/* ============ تسجيل الدخول / الجلسة ============ */
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  const errorText = document.getElementById('loginError');
+  errorText.textContent = '';
+  btn.disabled = true; btn.textContent = 'جارٍ الدخول...';
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    errorText.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+    btn.disabled = false; btn.textContent = 'تسجيل الدخول';
+    return;
+  }
+  await afterLogin(data.user.id);
+  btn.disabled = false; btn.textContent = 'تسجيل الدخول';
+});
+
+async function afterLogin(userId) {
+  const { data: profile, error } = await db.from('profiles')
+    .select('id, full_name, role, class_id, is_active').eq('id', userId).single();
+
+  if (error || !profile || !profile.is_active) {
+    document.getElementById('loginError').textContent = 'الحساب غير مفعّل أو غير موجود، يرجى مراجعة المدير';
+    await db.auth.signOut();
+    return;
+  }
+  PROFILE = profile;
+  const { data: classes } = await db.from('classes').select('id, name').order('id');
+  CLASSES = classes || [];
+
+  document.getElementById('page-login').style.display = 'none';
+  document.getElementById('page-app').style.display = 'block';
+  navigate('dashboard');
+}
+
+async function logout() {
+  await db.auth.signOut();
+  PROFILE = null;
+  document.getElementById('page-app').style.display = 'none';
+  document.getElementById('page-login').style.display = 'flex';
+  document.getElementById('email').value = '';
+  document.getElementById('password').value = '';
+}
+
+document.getElementById('hamburger').onclick = () => document.getElementById('sidebar').classList.toggle('open');
+
+/* ============ التنقل والشريط الجانبي ============ */
+function renderSidebar() {
+  const links = [
+    { page: 'dashboard', label: 'الرئيسية' },
+    { page: 'students', label: 'الطلاب' },
+    { page: 'attendance', label: 'الحضور' },
+  ];
+  if (PROFILE.role === 'manager') links.push({ page: 'staff', label: 'الخدام' });
+
+  const sidebarEl = document.getElementById('sidebar');
+  sidebarEl.innerHTML = `
+    <h2>نظام إدارة المرحلة</h2>
+    <nav>${links.map(l => `<a data-nav="${l.page}" class="${CURRENT_PAGE === l.page ? 'active' : ''}">${l.label}</a>`).join('')}</nav>
+    <div class="logout" id="logoutBtn">تسجيل الخروج</div>
+  `;
+  sidebarEl.querySelectorAll('[data-nav]').forEach(a => {
+    a.onclick = () => { navigate(a.dataset.nav); sidebarEl.classList.remove('open'); };
+  });
+  document.getElementById('logoutBtn').onclick = logout;
+}
+
+const PAGE_TITLES = { dashboard: 'الرئيسية', students: 'الطلاب', 'student-profile': 'ملف الطالب', attendance: 'تسجيل الحضور', staff: 'إدارة الخدام' };
+
+function navigate(page, params) {
+  CURRENT_PAGE = page;
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+  document.getElementById('page-' + page).style.display = 'block';
+  document.getElementById('pageTitle').textContent = PAGE_TITLES[page] || '';
+  document.getElementById('topbarActions').innerHTML = '';
+  renderSidebar();
+
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'students') loadStudentsPage(params || {});
+  if (page === 'student-profile') loadStudentProfile(params.id);
+  if (page === 'attendance') loadAttendancePage();
+  if (page === 'staff') loadStaffPage();
+}
+
+/* ============ الرئيسية ============ */
+async function loadDashboard() {
+  const container = document.getElementById('page-dashboard');
+  container.innerHTML = '<p>جارٍ التحميل...</p>';
+
+  if (PROFILE.role === 'manager') {
+    const { data: students } = await db.from('students').select('id, class_id');
+    const today = todayISO();
+    const { data: todayAttendance } = await db.from('attendance').select('status').eq('attendance_date', today);
+    const total = students ? students.length : 0;
+    const presentToday = (todayAttendance || []).filter(a => a.status === 'present').length;
+    const absentToday = (todayAttendance || []).filter(a => a.status === 'absent').length;
+
+    container.innerHTML = `
+      <div class="grid">
+        <div class="stat-card"><div class="num">${total}</div><div class="label">إجمالي الطلاب</div></div>
+        <div class="stat-card"><div class="num">${presentToday}</div><div class="label">حضور اليوم</div></div>
+        <div class="stat-card"><div class="num">${absentToday}</div><div class="label">غياب اليوم</div></div>
+      </div>
+      <h3>الصفوف</h3>
+      <div class="grid" id="classesGrid"></div>
+    `;
+    const classesGrid = document.getElementById('classesGrid');
+    CLASSES.forEach(c => {
+      const count = students ? students.filter(s => s.class_id === c.id).length : 0;
+      const div = document.createElement('div');
+      div.className = 'card class-card';
+      div.innerHTML = `<div>الصف ${c.name}</div><div class="count">${count} طالب</div>
+        <button class="btn small" data-goto="${c.id}">عرض الطلاب</button>`;
+      classesGrid.appendChild(div);
+    });
+    classesGrid.querySelectorAll('[data-goto]').forEach(btn => {
+      btn.onclick = () => navigate('students', { classId: btn.dataset.goto });
+    });
+  } else {
+    const cls = CLASSES.find(c => c.id === PROFILE.class_id);
+    const { data: students } = await db.from('students').select('id').eq('class_id', PROFILE.class_id);
+    const today = todayISO();
+    const ids = (students || []).map(s => s.id);
+    let presentToday = 0, absentToday = 0;
+    if (ids.length) {
+      const { data: att } = await db.from('attendance').select('status').eq('attendance_date', today).in('student_id', ids);
+      presentToday = (att || []).filter(a => a.status === 'present').length;
+      absentToday = (att || []).filter(a => a.status === 'absent').length;
+    }
+    container.innerHTML = `
+      <h2>الصف ${cls ? cls.name : ''}</h2>
+      <div class="grid">
+        <div class="stat-card"><div class="num">${students ? students.length : 0}</div><div class="label">عدد الطلاب</div></div>
+        <div class="stat-card"><div class="num">${presentToday}</div><div class="label">حضور اليوم</div></div>
+        <div class="stat-card"><div class="num">${absentToday}</div><div class="label">غياب اليوم</div></div>
+      </div>
+      <div class="card">
+        <p>مرحبًا بك، يمكنك من هنا إدارة طلاب صفك وتسجيل الحضور.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn" data-goto="students">عرض الطلاب</button>
+          <button class="btn secondary" data-goto="attendance">تسجيل الحضور</button>
+        </div>
+      </div>
+    `;
+    container.querySelectorAll('[data-goto]').forEach(btn => btn.onclick = () => navigate(btn.dataset.goto));
+  }
+}
+
+/* ============ الطلاب ============ */
+let STUDENTS = [];
+let ATTENDANCE_COUNTS = {};
+
+async function loadStudentsPage(params) {
+  const container = document.getElementById('page-students');
+  container.innerHTML = `
+    <div class="topbar" style="margin-bottom:10px">
+      <span></span><span></span>
+      <button class="btn" id="addStudentBtn">+ إضافة طالب</button>
+    </div>
+    <div class="card" id="studentFormCard" style="display:none">
+      <h3 id="studentFormTitle">إضافة طالب</h3>
+      <form id="studentForm">
+        <input type="hidden" id="studentId">
+        <label>الاسم الثنائي *</label><input type="text" id="firstName" required>
+        <label>اسم الأب *</label><input type="text" id="fatherName" required>
+        <label>اسم الأم *</label><input type="text" id="motherName" required>
+        <label>تاريخ الميلاد *</label><input type="date" id="birthDate" required>
+        <label>الصف الحالي *</label><select id="classSelect" required></select>
+        <label>رقم الهاتف</label><input type="tel" id="phone">
+        <div class="error-text" id="studentFormError"></div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button type="submit" class="btn">حفظ</button>
+          <button type="button" class="btn secondary" id="studentCancelBtn">إلغاء</button>
+        </div>
+      </form>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <select id="filterClass" style="max-width:200px"></select>
+        <input type="text" id="searchBox" placeholder="بحث بالاسم أو اسم الأب/الأم أو الهاتف...">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>الاسم</th><th>اسم الأب</th><th>اسم الأم</th><th>العمر</th><th>الصف</th><th>الهاتف</th><th>حضور</th><th>غياب</th><th>إجراءات</th></tr></thead>
+          <tbody id="studentsBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="studentsEmpty" style="display:none">لا يوجد طلاب في هذا الصف</div>
+    </div>
+  `;
+
+  const filterSel = document.getElementById('filterClass');
+  const formSel = document.getElementById('classSelect');
+  if (PROFILE.role === 'manager') {
+    filterSel.innerHTML = '<option value="">كل الصفوف</option>' + CLASSES.map(c => `<option value="${c.id}">الصف ${c.name}</option>`).join('');
+    formSel.innerHTML = CLASSES.map(c => `<option value="${c.id}">الصف ${c.name}</option>`).join('');
+    if (params.classId) filterSel.value = params.classId;
+  } else {
+    const myClass = CLASSES.find(c => c.id === PROFILE.class_id);
+    filterSel.innerHTML = `<option value="${PROFILE.class_id}">الصف ${myClass ? myClass.name : ''}</option>`;
+    filterSel.disabled = true;
+    formSel.innerHTML = `<option value="${PROFILE.class_id}">الصف ${myClass ? myClass.name : ''}</option>`;
+    formSel.disabled = true;
+  }
+
+  document.getElementById('addStudentBtn').onclick = () => openStudentForm();
+  document.getElementById('studentCancelBtn').onclick = closeStudentForm;
+  document.getElementById('studentForm').onsubmit = saveStudent;
+  filterSel.onchange = loadStudentsData;
+  document.getElementById('searchBox').oninput = renderStudentsTable;
+
+  await loadStudentsData();
+}
+
+async function loadStudentsData() {
+  const classId = document.getElementById('filterClass').value;
+  let query = db.from('students').select('*').order('first_name');
+  if (PROFILE.role === 'staff') query = query.eq('class_id', PROFILE.class_id);
+  else if (classId) query = query.eq('class_id', classId);
+
+  const { data, error } = await query;
+  if (error) { showToast('حدث خطأ أثناء تحميل الطلاب', 'error'); return; }
+  STUDENTS = data || [];
+
+  const ids = STUDENTS.map(s => s.id);
+  ATTENDANCE_COUNTS = {};
+  if (ids.length) {
+    const { data: att } = await db.from('attendance').select('student_id, status').in('student_id', ids);
+    (att || []).forEach(a => {
+      if (!ATTENDANCE_COUNTS[a.student_id]) ATTENDANCE_COUNTS[a.student_id] = { present: 0, absent: 0 };
+      ATTENDANCE_COUNTS[a.student_id][a.status]++;
+    });
+  }
+  renderStudentsTable();
+}
+
+function renderStudentsTable() {
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  const filtered = STUDENTS.filter(s => !q || [s.first_name, s.father_name, s.mother_name, s.phone || ''].join(' ').toLowerCase().includes(q));
+  const body = document.getElementById('studentsBody');
+  const emptyMsg = document.getElementById('studentsEmpty');
+  body.innerHTML = '';
+
+  if (!filtered.length) { emptyMsg.style.display = 'block'; return; }
+  emptyMsg.style.display = 'none';
+
+  filtered.forEach(s => {
+    const cls = CLASSES.find(c => c.id === s.class_id);
+    const counts = ATTENDANCE_COUNTS[s.id] || { present: 0, absent: 0 };
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${s.first_name}</td><td>${s.father_name}</td><td>${s.mother_name}</td>
+      <td>${calcAge(s.birth_date)}</td><td>${cls ? cls.name : '-'}</td><td>${s.phone || '-'}</td>
+      <td>${counts.present}</td><td>${counts.absent}</td>
+      <td>
+        <button class="btn small secondary" data-view="${s.id}">عرض</button>
+        <button class="btn small" data-edit="${s.id}">تعديل</button>
+        ${PROFILE.role === 'manager' ? `<button class="btn small danger" data-del="${s.id}">حذف</button>` : ''}
+      </td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('[data-view]').forEach(b => b.onclick = () => navigate('student-profile', { id: b.dataset.view }));
+  body.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => openStudentForm(STUDENTS.find(s => s.id == b.dataset.edit)));
+  body.querySelectorAll('[data-del]').forEach(b => b.onclick = () => deleteStudent(b.dataset.del));
+}
+
+function openStudentForm(student) {
+  document.getElementById('studentFormCard').style.display = 'block';
+  document.getElementById('studentFormTitle').textContent = student ? 'تعديل بيانات الطالب' : 'إضافة طالب';
+  document.getElementById('studentFormError').textContent = '';
+  document.getElementById('studentId').value = student ? student.id : '';
+  document.getElementById('firstName').value = student ? student.first_name : '';
+  document.getElementById('fatherName').value = student ? student.father_name : '';
+  document.getElementById('motherName').value = student ? student.mother_name : '';
+  document.getElementById('birthDate').value = student ? student.birth_date : '';
+  document.getElementById('phone').value = student ? (student.phone || '') : '';
+  if (PROFILE.role === 'manager' && student) document.getElementById('classSelect').value = student.class_id;
+  window.scrollTo(0, 0);
+}
+function closeStudentForm() {
+  document.getElementById('studentFormCard').style.display = 'none';
+  document.getElementById('studentForm').reset();
+}
+async function saveStudent(e) {
+  e.preventDefault();
+  const errorEl = document.getElementById('studentFormError');
+  errorEl.textContent = '';
+  const id = document.getElementById('studentId').value;
+  const payload = {
+    first_name: document.getElementById('firstName').value.trim(),
+    father_name: document.getElementById('fatherName').value.trim(),
+    mother_name: document.getElementById('motherName').value.trim(),
+    birth_date: document.getElementById('birthDate').value,
+    phone: document.getElementById('phone').value.trim() || null,
+    class_id: PROFILE.role === 'staff' ? PROFILE.class_id : Number(document.getElementById('classSelect').value),
+  };
+  if (!payload.first_name || !payload.father_name || !payload.mother_name || !payload.birth_date) {
+    errorEl.textContent = 'يرجى تعبئة جميع الحقول المطلوبة'; return;
+  }
+  let error;
+  if (id) ({ error } = await db.from('students').update(payload).eq('id', id));
+  else ({ error } = await db.from('students').insert(payload));
+  if (error) { errorEl.textContent = 'حدث خطأ، يرجى المحاولة مرة أخرى'; return; }
+  showToast(id ? 'تم تعديل بيانات الطالب' : 'تمت إضافة الطالب بنجاح', 'success');
+  closeStudentForm();
+  await loadStudentsData();
+}
+async function deleteStudent(id) {
+  const ok = await confirmDialog('هل أنت متأكد من حذف هذا الطالب؟ سيتم حذف سجلات حضوره أيضًا.');
+  if (!ok) return;
+  const { error } = await db.from('students').delete().eq('id', id);
+  if (error) { showToast('حدث خطأ، يرجى المحاولة مرة أخرى', 'error'); return; }
+  showToast('تم حذف الطالب', 'success');
+  await loadStudentsData();
+}
+
+/* ============ ملف الطالب ============ */
+async function loadStudentProfile(id) {
+  const container = document.getElementById('page-student-profile');
+  container.innerHTML = '<p>جارٍ التحميل...</p>';
+
+  const { data: student, error } = await db.from('students').select('*, classes(name)').eq('id', id).single();
+  if (error || !student) { container.innerHTML = '<p>تعذر العثور على الطالب</p>'; return; }
+
+  const { data: attendance } = await db.from('attendance').select('attendance_date, status').eq('student_id', id).order('attendance_date', { ascending: false });
+  const present = (attendance || []).filter(a => a.status === 'present').length;
+  const absent = (attendance || []).filter(a => a.status === 'absent').length;
+
+  container.innerHTML = `
+    <button class="btn secondary small" id="backToStudents" style="margin-bottom:14px">رجوع للطلاب</button>
+    <div class="card">
+      <h2>${student.first_name}</h2>
+      <p><strong>اسم الأب:</strong> ${student.father_name}</p>
+      <p><strong>اسم الأم:</strong> ${student.mother_name}</p>
+      <p><strong>تاريخ الميلاد:</strong> ${formatDateAr(student.birth_date)}</p>
+      <p><strong>العمر:</strong> ${calcAge(student.birth_date)} سنة</p>
+      <p><strong>الصف الحالي:</strong> ${student.classes ? student.classes.name : '-'}</p>
+      <p><strong>رقم الهاتف:</strong> ${student.phone || '-'}</p>
+    </div>
+    <div class="card">
+      <h3>سجل الحضور</h3>
+      <div class="grid" style="margin-bottom:14px">
+        <div class="stat-card"><div class="num">${present}</div><div class="label">إجمالي الحضور</div></div>
+        <div class="stat-card"><div class="num">${absent}</div><div class="label">إجمالي الغياب</div></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>الحالة</th></tr></thead>
+        <tbody>${(attendance || []).map(a => `<tr><td>${formatDateAr(a.attendance_date)}</td><td><span class="badge ${a.status}">${a.status === 'present' ? 'حاضر' : 'غائب'}</span></td></tr>`).join('') || ''}</tbody>
+      </table></div>
+      ${!attendance || !attendance.length ? '<div class="empty">لا توجد سجلات حضور بعد</div>' : ''}
+    </div>
+  `;
+  document.getElementById('backToStudents').onclick = () => navigate('students');
+}
+
+/* ============ الحضور ============ */
+let ATT_STUDENTS = [];
+let ATT_SELECTIONS = {};
+
+async function loadAttendancePage() {
+  const container = document.getElementById('page-attendance');
+  container.innerHTML = `
+    <div class="card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <select id="attClassSelect" style="max-width:200px"></select>
+        <input type="date" id="attDateInput" style="max-width:200px">
+      </div>
+    </div>
+    <div class="card" id="attListCard" style="display:none">
+      <div id="attStudentsList"></div>
+      <div class="empty" id="attEmpty" style="display:none">لا يوجد طلاب في هذا الصف</div>
+      <button class="btn" id="attSaveBtn" style="margin-top:14px">حفظ الحضور</button>
+    </div>
+  `;
+
+  const classSelect = document.getElementById('attClassSelect');
+  if (PROFILE.role === 'manager') {
+    classSelect.innerHTML = '<option value="">اختر الصف</option>' + CLASSES.map(c => `<option value="${c.id}">الصف ${c.name}</option>`).join('');
+  } else {
+    const cls = CLASSES.find(c => c.id === PROFILE.class_id);
+    classSelect.innerHTML = `<option value="${PROFILE.class_id}">الصف ${cls ? cls.name : ''}</option>`;
+  }
+  document.getElementById('attDateInput').value = todayISO();
+  classSelect.onchange = loadStudentsForAttendance;
+  document.getElementById('attDateInput').onchange = loadStudentsForAttendance;
+  document.getElementById('attSaveBtn').onclick = saveAttendance;
+
+  if (PROFILE.role === 'staff') loadStudentsForAttendance();
+}
+
+async function loadStudentsForAttendance() {
+  const classId = document.getElementById('attClassSelect').value;
+  const date = document.getElementById('attDateInput').value;
+  const listCard = document.getElementById('attListCard');
+  if (!classId || !date) { listCard.style.display = 'none'; return; }
+
+  const { data: students, error } = await db.from('students').select('id, first_name, father_name').eq('class_id', classId).order('first_name');
+  if (error) { showToast('حدث خطأ أثناء تحميل الطلاب', 'error'); return; }
+  ATT_STUDENTS = students || [];
+  ATT_SELECTIONS = {};
+  if (ATT_STUDENTS.length) {
+    const ids = ATT_STUDENTS.map(s => s.id);
+    const { data: existing } = await db.from('attendance').select('student_id, status').eq('attendance_date', date).in('student_id', ids);
+    (existing || []).forEach(a => { ATT_SELECTIONS[a.student_id] = a.status; });
+  }
+  listCard.style.display = 'block';
+  renderAttendanceList();
+}
+
+function renderAttendanceList() {
+  const container = document.getElementById('attStudentsList');
+  const emptyMsg = document.getElementById('attEmpty');
+  container.innerHTML = '';
+  if (!ATT_STUDENTS.length) { emptyMsg.style.display = 'block'; document.getElementById('attSaveBtn').style.display = 'none'; return; }
+  emptyMsg.style.display = 'none';
+  document.getElementById('attSaveBtn').style.display = 'inline-block';
+
+  ATT_STUDENTS.forEach(s => {
+    const sel = ATT_SELECTIONS[s.id];
+    const row = document.createElement('div');
+    row.className = 'attend-row';
+    row.innerHTML = `
+      <div class="name">${s.first_name} ${s.father_name}</div>
+      <div class="attend-choices">
+        <button type="button" data-id="${s.id}" data-status="present" class="${sel === 'present' ? 'sel-present' : ''}">حاضر</button>
+        <button type="button" data-id="${s.id}" data-status="absent" class="${sel === 'absent' ? 'sel-absent' : ''}">غائب</button>
+      </div>`;
+    container.appendChild(row);
+  });
+  container.querySelectorAll('button[data-status]').forEach(btn => {
+    btn.onclick = () => { ATT_SELECTIONS[btn.dataset.id] = btn.dataset.status; renderAttendanceList(); };
+  });
+}
+
+async function saveAttendance() {
+  const date = document.getElementById('attDateInput').value;
+  const rows = Object.keys(ATT_SELECTIONS).map(studentId => ({ student_id: Number(studentId), attendance_date: date, status: ATT_SELECTIONS[studentId] }));
+  if (!rows.length) { showToast('يرجى تحديد حالة طالب واحد على الأقل', 'error'); return; }
+  const { error } = await db.from('attendance').upsert(rows, { onConflict: 'student_id,attendance_date' });
+  if (error) { showToast('حدث خطأ، يرجى المحاولة مرة أخرى', 'error'); return; }
+  const present = rows.filter(r => r.status === 'present').length;
+  const absent = rows.filter(r => r.status === 'absent').length;
+  showToast(`تم حفظ حضور الطلاب بنجاح — الحاضرون: ${present} — الغائبون: ${absent}`, 'success');
+}
+
+/* ============ إدارة الخدام ============ */
+async function loadStaffPage() {
+  const container = document.getElementById('page-staff');
+  container.innerHTML = `
+    <div class="topbar" style="margin-bottom:10px">
+      <span></span><span></span>
+      <button class="btn" id="addStaffBtn">+ إضافة خادم</button>
+    </div>
+    <div class="card" id="staffFormCard" style="display:none">
+      <h3>إضافة خادم جديد</h3>
+      <p style="font-size:13px;color:var(--muted)">
+        أولًا أنشئ حساب البريد وكلمة المرور من لوحة Supabase: Authentication ← Users ← Add user، ثم انسخ الـ UID والصقه هنا.
+      </p>
+      <form id="staffForm">
+        <label>الاسم الكامل *</label><input type="text" id="staffFullName" required>
+        <label>البريد الإلكتروني (للعرض فقط) *</label><input type="email" id="staffEmail" required>
+        <label>UID (من Supabase Authentication) *</label><input type="text" id="staffUserId" required placeholder="00000000-0000-0000-0000-000000000000">
+        <label>الصف *</label><select id="staffClassSelect" required></select>
+        <div class="error-text" id="staffFormError"></div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button type="submit" class="btn">حفظ</button>
+          <button type="button" class="btn secondary" id="staffCancelBtn">إلغاء</button>
+        </div>
+      </form>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table><thead><tr><th>الاسم</th><th>الصف</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+        <tbody id="staffBody"></tbody></table>
+      </div>
+      <div class="empty" id="staffEmpty" style="display:none">لا يوجد خدام بعد</div>
+    </div>
+  `;
+  document.getElementById('staffClassSelect').innerHTML = CLASSES.map(c => `<option value="${c.id}">الصف ${c.name}</option>`).join('');
+  document.getElementById('addStaffBtn').onclick = () => {
+    document.getElementById('staffFormCard').style.display = 'block';
+    document.getElementById('staffForm').reset();
+    document.getElementById('staffFormError').textContent = '';
+  };
+  document.getElementById('staffCancelBtn').onclick = () => document.getElementById('staffFormCard').style.display = 'none';
+  document.getElementById('staffForm').onsubmit = saveStaff;
+
+  await loadStaffData();
+}
+
+async function loadStaffData() {
+  const { data, error } = await db.from('profiles').select('*').eq('role', 'staff').order('created_at');
+  const body = document.getElementById('staffBody');
+  const emptyMsg = document.getElementById('staffEmpty');
+  body.innerHTML = '';
+  if (error || !data || !data.length) { emptyMsg.style.display = 'block'; return; }
+  emptyMsg.style.display = 'none';
+
+  data.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${s.full_name}<br><span style="color:var(--muted);font-size:12px">${s.email || ''}</span></td>
+      <td><select data-class="${s.id}" style="min-width:110px">${CLASSES.map(c => `<option value="${c.id}" ${c.id === s.class_id ? 'selected' : ''}>الصف ${c.name}</option>`).join('')}</select></td>
+      <td><span class="badge ${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'مفعّل' : 'متوقف'}</span></td>
+      <td><button class="btn small ${s.is_active ? 'danger' : 'success'}" data-toggle="${s.id}" data-active="${s.is_active}">${s.is_active ? 'إيقاف' : 'تفعيل'}</button></td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('[data-class]').forEach(sel => sel.onchange = () => updateStaffClass(sel.dataset.class, sel.value));
+  body.querySelectorAll('[data-toggle]').forEach(btn => btn.onclick = () => toggleStaff(btn.dataset.toggle, btn.dataset.active === 'true'));
+}
+
+async function saveStaff(e) {
+  e.preventDefault();
+  const errorEl = document.getElementById('staffFormError');
+  errorEl.textContent = '';
+  const payload = {
+    id: document.getElementById('staffUserId').value.trim(),
+    full_name: document.getElementById('staffFullName').value.trim(),
+    email: document.getElementById('staffEmail').value.trim(),
+    role: 'staff',
+    class_id: Number(document.getElementById('staffClassSelect').value),
+    is_active: true,
+  };
+  if (!payload.id || !payload.full_name || !payload.email) { errorEl.textContent = 'يرجى تعبئة جميع الحقول'; return; }
+  const { error } = await db.from('profiles').insert(payload);
+  if (error) {
+    errorEl.textContent = error.message.includes('الحد الأقصى') ? error.message : 'حدث خطأ، تأكد من صحة الـ UID أو أن الحساب غير مضاف مسبقًا';
+    return;
+  }
+  showToast('تمت إضافة الخادم بنجاح', 'success');
+  document.getElementById('staffFormCard').style.display = 'none';
+  await loadStaffData();
+}
+async function updateStaffClass(id, classId) {
+  const { error } = await db.from('profiles').update({ class_id: Number(classId) }).eq('id', id);
+  if (error) { showToast(error.message.includes('الحد الأقصى') ? error.message : 'حدث خطأ، يرجى المحاولة مرة أخرى', 'error'); await loadStaffData(); return; }
+  showToast('تم تعديل الصف', 'success');
+}
+async function toggleStaff(id, currentlyActive) {
+  const { error } = await db.from('profiles').update({ is_active: !currentlyActive }).eq('id', id);
+  if (error) { showToast('حدث خطأ، يرجى المحاولة مرة أخرى', 'error'); return; }
+  showToast(currentlyActive ? 'تم إيقاف الحساب' : 'تم تفعيل الحساب', 'success');
+  await loadStaffData();
+}
+
+/* ============ بدء التشغيل ============ */
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) await afterLogin(session.user.id);
+})();
+</script>
+</body>
+</html>
